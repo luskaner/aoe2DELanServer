@@ -46,13 +46,13 @@ Steam or Xbox Live depending on the version to fully play offline.**
 ### Server
 
 - Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher.
-- MacOS: Catalina 10.15 or higher.
+- macOS: Big Sur 11 or higher.
 - GNU/Linux: *any supported distro, see the note below for details*.
 
 Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly)
 depending on the operating system.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.23.
 
 ### Launcher
 
@@ -92,7 +92,7 @@ The following archives are provided:
         * **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
         * **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
         * **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * Mac OS:
+    * macOS:
         * **Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
         * **Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
         * **Universal - all-in-one**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
@@ -172,7 +172,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ### System requirements
 
-- [Go 1.22](https://go.dev/dl/).
+- [Go 1.23](https://go.dev/dl/).
 - [Git](https://git-scm.com/downloads).
 - [Task](https://taskfile.dev/installation/).
 - [GoReleaser](https://goreleaser.com/).

@@ -1,6 +1,6 @@
 module admin
 
-go 1.22.0
+go 1.23rc2
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0

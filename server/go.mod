@@ -1,6 +1,6 @@
 module server
 
-go 1.22.0
+go 1.23rc2
 
 require (
 	github.com/google/uuid v1.4.0

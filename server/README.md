@@ -6,10 +6,11 @@ API requests. The server reimplements the minimum required API surface to allow 
 ## System requirements
 
 The server supports a very wide variety of operating systems and architectures. Basically any system you can
-compile [Go](https://go.dev/wiki/MinimumRequirements) 1.22 for. If you are a developer it can support even more
-operating systems by using the
-older Go version 1.20 (few code changes might be required) that would enable Windows 7 or higher support, macOS
-High Sierra 10.13 or higher ... etc.
+compile [Go](https://go.dev/wiki/MinimumRequirements) 1.23 for. If you are a developer it can support even more
+operating systems by using older Go versions like:
+
+* 1.22: macOS Catalina 10.15.
+* 1.20: Windows 7, macOS High Sierra 10.13.
 
 ## Configuration
 

@@ -1,12 +1,11 @@
 module launcher-common
 
-go 1.22.0
+go 1.23rc2
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.21.0
-	golang.org/x/text v0.16.0
 )
 
 require (
