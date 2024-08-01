@@ -1,17 +1,24 @@
 package main
 
 import (
-	"agent/internal"
-	"fmt"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	"cfgAdminAgent/internal"
+	"common"
+	"common/pidLock"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 	"os"
 )
 
 func main() {
+	lock := &pidLock.Lock{}
+	if err := lock.Lock(); err != nil {
+		os.Exit(common.ErrPidLock)
+	}
 	if !executor.IsAdmin() {
-		fmt.Println("This proram must be run as an administrator")
+		_ = lock.Unlock()
 		os.Exit(launcherCommon.ErrNotAdmin)
 	}
-	internal.RunIpcServer()
+	errorCode := internal.RunIpcServer()
+	_ = lock.Unlock()
+	os.Exit(errorCode)
 }

@@ -4,7 +4,7 @@ import (
 	"common"
 	"crypto/tls"
 	"crypto/x509"
-	"launcher-common/executor"
+	"launcherCommon/executor"
 	"net"
 	"os"
 	"path/filepath"
@@ -49,7 +49,7 @@ func ReadCertificateFromServer(host string) *x509.Certificate {
 
 func GenerateCertificatePair(certificateFolder string) (result *executor.ExecResult) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
-	exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
+	exePath := filepath.Join(baseFolder, common.GetExeFileName(false, common.ServerGenCert))
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}

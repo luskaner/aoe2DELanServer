@@ -86,7 +86,6 @@ The following archives are provided:
         * **10 IoT on Arm (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
         * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
-        * **10 (or higher) - all-in-one**: aoe2DELanServer_server_*A.B.C*_win_all.zip
     * Linux:
         * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.gz
         * **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
@@ -190,7 +189,7 @@ Depending on the module you want to debug, you will need to run the correspondin
 - launcher: ```task debug:prepare-launcher```
     - config: ```task debug:build-config-admin-agent```
     - config-admin-agent: ```task debug:build-config-admin```
-    - watcher: ```task debug:build-config-all```
+    - agent: ```task debug:build-config-all```
 
 ### Build
 

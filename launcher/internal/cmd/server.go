@@ -5,10 +5,10 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/spf13/viper"
-	launcherCommon "launcher-common"
-	commonExecutor "launcher-common/executor"
 	"launcher/internal"
 	"launcher/internal/server"
+	launcherCommon "launcherCommon"
+	commonExecutor "launcherCommon/executor"
 	"net"
 	"sort"
 	"strings"
@@ -201,11 +201,12 @@ func (c *Config) StartServer(executable string, stop bool, canTrustCertificate b
 		stopStr = "false"
 	}
 	var result *commonExecutor.ExecResult
-	result, ip = server.StartServer(stopStr, executable,
+	var serverExe string
+	result, serverExe, ip = server.StartServer(stopStr, executable,
 		viper.GetStringSlice("Server.ExecutableArgs"))
 	if result.Success() {
 		fmt.Println("Server started.")
-		c.SetServerPid(result.Pid)
+		c.SetServerExe(serverExe)
 	} else {
 		fmt.Println("Could not start server.")
 		errorCode = internal.ErrServerStart

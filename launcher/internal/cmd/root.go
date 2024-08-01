@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"common"
+	commonProcess "common/process"
 	"fmt"
-	commonExecutor "launcher-common/executor"
 	"launcher/internal/executor"
-	"launcher/internal/game"
 )
 
 type Config struct {
@@ -15,8 +14,8 @@ type Config struct {
 	removeLocalCert bool
 	restoreMetadata bool
 	restoreProfiles bool
-	serverPid       uint32
-	watcherPid      uint32
+	serverExe       string
+	agentStarted    bool
 }
 
 func (c *Config) MappedHosts() {
@@ -41,15 +40,15 @@ func (c *Config) BackedUpProfiles() {
 	c.restoreProfiles = true
 }
 
-func (c *Config) SetWatcherPid(pid uint32) {
-	c.watcherPid = pid
+func (c *Config) SetAgentStarted() {
+	c.agentStarted = true
 }
 
-func (c *Config) SetServerPid(pid uint32) {
-	c.serverPid = pid
+func (c *Config) SetServerExe(exe string) {
+	c.serverExe = exe
 }
 
-func (c *Config) StartedAgent() bool {
+func (c *Config) CfgAgentStarted() bool {
 	return c.startedAgent
 }
 
@@ -57,19 +56,25 @@ func (c *Config) RequiresConfigRevert() bool {
 	return c.unmapIPs || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
 }
 
-func (c *Config) WatcherPid() uint32 {
-	return c.watcherPid
+func (c *Config) AgentStarted() bool {
+	return c.agentStarted
+}
+
+func (c *Config) ServerExe() string {
+	return c.serverExe
 }
 
 func (c *Config) Revert() {
-	if c.serverPid > 0 {
+	if serverExe := c.ServerExe(); len(serverExe) > 0 {
 		fmt.Println("Stopping server...")
-		if err := commonExecutor.Kill(int(c.serverPid)); err == nil {
+		if proc, err := commonProcess.Kill(serverExe); err == nil {
 			fmt.Println("Server stopped.")
 		} else {
 			fmt.Println("Failed to stop server.")
 			fmt.Println("Error message: " + err.Error())
-			fmt.Println("You may need to stop the server manually. Search for the process with the name", common.GetExeFileName(common.Server), "and PID", c.serverPid)
+			if proc != nil {
+				fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+			}
 		}
 	}
 	if c.RequiresConfigRevert() {
@@ -89,7 +94,7 @@ func (c *Config) Revert() {
 }
 
 func GameRunning() bool {
-	if game.AnyProcessExists(true, true) {
+	if commonProcess.AnyProcessExists(commonProcess.GameProcesses(true, true)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}

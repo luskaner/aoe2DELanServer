@@ -6,8 +6,8 @@ import (
 	"encoding/gob"
 	"github.com/Microsoft/go-winio"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 	"net"
 	"time"
 )
@@ -105,7 +105,7 @@ func StartAgentIfNeeded() (result *executor.ExecResult) {
 	if pipe != nil {
 		return
 	}
-	result = executor.ExecOptions{File: common.GetExeFileName(common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
+	result = executor.ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
 	return
 }
 

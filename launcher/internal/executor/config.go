@@ -4,8 +4,8 @@ import (
 	"common"
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 )
 
 func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, exitAgentOnError bool) (result *executor.ExecResult) {
@@ -37,14 +37,14 @@ func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertDat
 	if backupProfiles {
 		args = append(args, "-p")
 	}
-	result = executor.ExecOptions{File: common.GetExeFileName(common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
 func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool) (result *executor.ExecResult) {
 	args := []string{launcherCommon.ConfigRevertCmd}
 	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles)...)
-	result = executor.ExecOptions{File: common.GetExeFileName(common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
