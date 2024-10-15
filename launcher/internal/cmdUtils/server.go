@@ -63,9 +63,9 @@ func SelectBestServerIp(ips []string) (ok bool, ip string) {
 	return
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(ports []int) (errorCode int, ip string) {
+func ListenToServerAnnouncementsAndSelectBestIp(multicastIPs []net.IP, ports []int) (errorCode int, ip string) {
 	errorCode = common.ErrSuccess
-	servers := server.LanServersAnnounced(ports)
+	servers := server.LanServersAnnounced(multicastIPs, ports)
 	if servers == nil {
 		fmt.Println("Could not listen to server announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
 		errorCode = internal.ErrListenServerAnnouncements

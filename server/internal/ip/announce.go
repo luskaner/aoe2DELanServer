@@ -7,27 +7,38 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"golang.org/x/net/ipv4"
 	"net"
 	"time"
 )
 
-func Announce(ip net.IP, port int) {
-	ips, targetIps := ResolveIps(ip)
-
-	if len(ips) == 0 {
+func Announce(listenIP net.IP, multicastIP net.IP, targetBroadcastPort int, broadcast bool, multicast bool) {
+	sourceIPs, targetAddrs := ResolveAddrs(listenIP, multicastIP, targetBroadcastPort, broadcast, multicast)
+	if len(sourceIPs) == 0 {
 		fmt.Println("No suitable addresses found.")
 		return
 	}
+	announce(sourceIPs, targetAddrs)
+}
 
+func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	var connections []*net.UDPConn
-	for _, targetIp := range targetIps {
-		conn, err := net.DialUDP("udp4", nil, &net.UDPAddr{
-			IP:   targetIp,
-			Port: port,
-		})
+	for i := range targetAddrs {
+		sourceAddr := net.UDPAddr{IP: sourceIPs[i]}
+		targetAddr := targetAddrs[i]
+		conn, err := net.DialUDP(
+			"udp4",
+			&sourceAddr,
+			targetAddr,
+		)
+		if targetAddr.IP.IsMulticast() {
+			p := ipv4.NewPacketConn(conn)
+			_ = p.SetMulticastLoopback(true)
+		}
 		if err != nil {
 			continue
 		}
+		fmt.Printf("Announcing %s -> %s\n", sourceAddr.IP.String(), targetAddr.IP.String())
 		connections = append(connections, conn)
 	}
 
