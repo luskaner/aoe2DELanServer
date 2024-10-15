@@ -38,4 +38,5 @@ const (
 	ErrSetupCommand
 	ErrConfigCDNMap
 	ErrSteamRoot
+	ErrAnnouncementMulticastGroup
 )

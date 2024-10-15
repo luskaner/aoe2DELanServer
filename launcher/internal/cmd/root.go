@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"mvdan.cc/sh/v3/shell"
+	"net"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -214,8 +215,19 @@ var (
 						return
 					}
 				}
+				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
+				multicastIPs := make([]net.IP, len(multicastIPsStr))
+				for i, str := range multicastIPsStr {
+					if IP := net.ParseIP(str); err == nil && IP.To4() != nil && IP.IsMulticast() {
+						multicastIPs[i] = IP
+					} else {
+						fmt.Printf(`Invalid multicast group "%s"\n`, str)
+						errorCode = internal.ErrAnnouncementMulticastGroup
+						return
+					}
+				}
 				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(portsInt)
+				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(multicastIPs, portsInt)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
@@ -303,6 +315,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
 	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
 	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured servers will not get discovered.`)
+	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured servers will not get discovered via Multicast.`)
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "e", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s", "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
@@ -354,6 +367,9 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Server.AnnouncePorts", rootCmd.PersistentFlags().Lookup("serverAnnouncePorts")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Server.AnnounceMulticastGroups", rootCmd.PersistentFlags().Lookup("serverAnnounceMulticastGroups")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Server.Host", rootCmd.PersistentFlags().Lookup("server")); err != nil {

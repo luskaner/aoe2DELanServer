@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/netip"
 	"os"
@@ -92,15 +93,26 @@ var (
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-			if viper.GetBool("Announcement.Enabled") {
-				fmt.Println("Announcing server to UDP port", viper.GetInt("Announcement.Port"))
-			}
-
 			handler := handlers.LoggingHandler(writer, sessionMux)
 			certFile := filepath.Join(certificatePairFolder, common.Cert)
 			keyFile := filepath.Join(certificatePairFolder, common.Key)
 			var servers []*http.Server
 			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
+			var multicastIP net.IP
+			multicast := viper.GetBool("Announcement.Multicast")
+			if multicast {
+				multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
+				if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
+					fmt.Println("Invalid multicast IP")
+					_ = lock.Unlock()
+					os.Exit(internal.ErrMulticastGroup)
+				}
+			}
+			broadcast := viper.GetBool("Announcement.Broadcast")
+			announcePort := viper.GetInt("Announcement.Port")
+			if broadcast || multicast {
+				fmt.Println("Announcing on port", announcePort)
+			}
 			for _, addr := range addrs {
 				server := &http.Server{
 					Addr:     addr.String() + ":443",
@@ -110,9 +122,9 @@ var (
 
 				fmt.Println("Listening on " + server.Addr)
 				go func() {
-					if viper.GetBool("Announcement.Enabled") {
+					if broadcast || multicast {
 						go func() {
-							ip.Announce(addr, viper.GetInt("Announcement.Port"))
+							ip.Announce(addr, multicastIP, announcePort, broadcast, multicast)
 						}()
 					}
 					err := server.ListenAndServeTLS(certFile, keyFile)
@@ -151,6 +163,9 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce server in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts")
+	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
+	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the server using Broadcast.")
+	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the server using Multicast or Broadcast.")
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
@@ -158,6 +173,15 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.Port", rootCmd.PersistentFlags().Lookup("announcePort")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Announcement.Broadcast", rootCmd.PersistentFlags().Lookup("announceBroadcast")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Announcement.Multicast", rootCmd.PersistentFlags().Lookup("announceMulticast")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.PersistentFlags().Lookup("announceMulticastGroup")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("default.Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {

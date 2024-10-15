@@ -10,4 +10,5 @@ const (
 	ErrCreateLogsDir
 	ErrCreateLogFile
 	ErrStartServer
+	ErrMulticastGroup
 )
