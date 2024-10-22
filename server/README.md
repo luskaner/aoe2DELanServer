@@ -42,7 +42,7 @@ the ```launcher``` if you are hosting and running the launcher on same PC.
 
 ### Main
 
-The few configuration options are available in the [`config.ini`](resources/config/config.ini) file. The file is
+The few configuration options are available in the [`config.toml`](resources/config/config.toml) file. The file is
 self-explanatory and should be easy to understand.
 
 ### Login

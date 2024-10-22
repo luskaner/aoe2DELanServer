@@ -36,7 +36,7 @@ var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
 func parseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmd := viper.GetString(name)
+	cmd := strings.Join(viper.GetStringSlice(name), " ")
 	for key, value := range values {
 		cmd = strings.ReplaceAll(cmd, fmt.Sprintf(`{%s}`, key), value)
 	}
@@ -219,16 +219,10 @@ var (
 			}
 			alreadySelectedIp := false
 			if serverStart == "auto" {
-				announcePorts := viper.GetStringSlice("Server.AnnouncePorts")
-				portsInt := make([]int, len(announcePorts))
-				for i, str := range announcePorts {
-					if portInt, err := strconv.Atoi(str); err == nil {
-						portsInt[i] = portInt
-					} else {
-						fmt.Printf(`Invalid announce port "%s"\n`, str)
-						errorCode = internal.ErrAnnouncementPort
-						return
-					}
+				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
+				portsStr := make([]string, len(announcePorts))
+				for i, portInt := range announcePorts {
+					portsStr[i] = strconv.Itoa(portInt)
 				}
 				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
 				multicastIPs := make([]net.IP, len(multicastIPsStr))
@@ -241,8 +235,8 @@ var (
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(gameId, multicastIPs, portsInt)
+				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(portsStr, ", "), common.AnnounceVersionLatest)
+				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(gameId, multicastIPs, announcePorts)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
@@ -308,8 +302,8 @@ var (
 func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.aoe2.ini in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
 	if runtime.GOOS == "windows" {
@@ -414,7 +408,7 @@ func initConfig() {
 	for _, configPath := range configPaths {
 		viper.AddConfigPath(configPath)
 	}
-	viper.SetConfigType("ini")
+	viper.SetConfigType("toml")
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {

@@ -310,7 +310,8 @@ archives:
         dst: launcher/docs/README.txt
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
-      - launcher/resources/config.ini
+      - launcher/resources/config.toml
+      - launcher/resources/config.game.toml
       - src: launcher-config/resources/windows/cleanup.bat
         dst: launcher/cleanup.bat
     format: zip
@@ -337,7 +338,8 @@ archives:
         dst: launcher/docs/README.txt
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
-      - launcher/resources/config.ini
+      - launcher/resources/config.toml
+      - launcher/resources/config.game.toml
       - src: launcher-config/resources/windows/cleanup.bat
         dst: launcher/cleanup.bat
     format: tar.xz
@@ -377,7 +379,8 @@ archives:
         dst: launcher/docs/README
       - src: launcher-config/README.md
         dst: launcher/docs/README-config
-      - launcher/resources/config.ini
+      - launcher/resources/config.toml
+      - launcher/resources/config.game.toml
       - src: launcher/resources/unix/launcher.sh
         dst: launcher/launcher.sh
         info:
@@ -487,8 +490,10 @@ archives:
       - launcher-config-admin_windows_amd64
       - launcher-config-admin-agent_windows_amd64
     files:
-      - src: launcher/resources/config.ini
-        dst: resources/config.ini
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.game.toml
       - src: LICENSE
         dst: docs/LICENSE.txt
       - src: launcher/README.md
@@ -507,8 +512,10 @@ archives:
       - launcher-config-admin_windows_arm64
       - launcher-config-admin-agent_windows_arm64
     files:
-      - src: launcher/resources/config.ini
-        dst: resources/config.ini
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.game.toml
       - src: LICENSE
         dst: docs/LICENSE.txt
       - src: launcher/README.md
@@ -527,8 +534,10 @@ archives:
       - launcher-config-admin_linux
       - launcher-config-admin-agent_linux
     files:
-      - src: launcher/resources/config.ini
-        dst: resources/config.ini
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.game.toml
       - src: launcher/resources/unix/launcher.sh
         dst: launcher.sh
         info:
