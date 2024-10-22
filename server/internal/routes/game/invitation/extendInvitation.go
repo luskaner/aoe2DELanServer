@@ -20,32 +20,32 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	adv, ok := models.GetAdvertisement(q.AdvertisementId)
+	game := middleware.Age2Game(r)
+	u, _ := game.Users().GetUserById(sess.GetUserId())
+	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok || adv.GetPasswordValue() != q.AdvertisementPassword {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var peer *models.Peer
+	var peer *models.MainPeer
 	peer, ok = adv.GetPeer(u)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var invitee *models.User
-	invitee, ok = models.GetUserById(q.UserId)
+	var invitee *models.MainUser
+	invitee, ok = game.Users().GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invited := peer.IsInvited(invitee)
-	if invited {
+	if peer.IsInvited(invitee) {
 		i.JSON(&w, i.A{0})
 		return
 	}
 	peer.Invite(invitee)
 	var inviteeSession *models.Session
-	inviteeSession, ok = models.GetSessionByUser(invitee)
+	inviteeSession, ok = models.GetSessionByUserId(invitee.GetId())
 	if ok {
 		go func(userId int32, advertisementId int32, advertisementPassword string, sessId string, userProfileInfo i.A) {
 			// TODO: Wait for client to acknowledge it

@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
 	"github.com/luskaner/aoe2DELanServer/server/internal/ip"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models/initializer"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,6 +46,19 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			gameSet := mapset.NewSet[string](viper.GetStringSlice("default.Games")...)
+			if gameSet.IsEmpty() {
+				fmt.Println("No games specified")
+				_ = lock.Unlock()
+				os.Exit(internal.ErrGames)
+			}
+			for game := range gameSet.Iter() {
+				if !common.ValidGame(game) {
+					fmt.Println("Invalid game specified:", game)
+					_ = lock.Unlock()
+					os.Exit(internal.ErrGames)
+				}
+			}
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
@@ -59,10 +73,10 @@ var (
 				os.Exit(internal.ErrResolveHost)
 			}
 			mux := http.NewServeMux()
-			files.Initialize()
+			initializer.InitializeGames(gameSet)
 			routes.Initialize(mux)
-			sessionMux := middleware.SessionMiddleware(mux)
-
+			gameMux := middleware.GameMiddleware(mux)
+			sessionMux := middleware.SessionMiddleware(gameMux)
 			logToConsole := viper.GetBool("default.LogToConsole")
 			var writer io.Writer
 			if logToConsole {
@@ -166,6 +180,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
 	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the server using Broadcast.")
 	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the server using Multicast or Broadcast.")
+	rootCmd.PersistentFlags().StringArrayP("games", "e", []string{common.GameAoE2}, fmt.Sprintf(`Games that the server will accept. Currently, only "%s" is supported.`, common.GameAoE2))
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
@@ -185,6 +200,9 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("default.Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("default.Games", rootCmd.PersistentFlags().Lookup("games")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("default.LogToConsole", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {

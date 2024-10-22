@@ -1,6 +1,7 @@
 package userData
 
 import (
+	"github.com/luskaner/aoe2DELanServer/common"
 	"os"
 	"path/filepath"
 )
@@ -9,26 +10,35 @@ type Data struct {
 	Path string
 }
 
-const finalPath = `Games\Age of Empires 2 DE`
+const finalPathPrefix = "Games"
 
-func (d *Data) isolatedPath() string {
-	return d.absolutePath() + `.lan`
+func finalPath(gameId string) string {
+	var suffix string
+	switch gameId {
+	case common.GameAoE2:
+		suffix = `Age of Empires 2 DE`
+	}
+	return filepath.Join(finalPathPrefix, suffix)
 }
 
-func (d *Data) originalPath() string {
-	return d.absolutePath() + `.bak`
+func (d Data) isolatedPath(gameId string) string {
+	return d.absolutePath(gameId) + `.lan`
 }
 
-func (d *Data) absolutePath() string {
-	return filepath.Join(Path(), d.Path)
+func (d Data) originalPath(gameId string) string {
+	return d.absolutePath(gameId) + `.bak`
 }
 
-func Path() string {
-	return filepath.Join(basePath(), finalPath)
+func (d Data) absolutePath(gameId string) string {
+	return filepath.Join(Path(gameId), d.Path)
 }
 
-func (d *Data) switchPaths(backupPath string, currentPath string) bool {
-	absolutePath := d.absolutePath()
+func Path(gameId string) string {
+	return filepath.Join(basePath(), finalPath(gameId))
+}
+
+func (d Data) switchPaths(gameId, backupPath string, currentPath string) bool {
+	absolutePath := d.absolutePath(gameId)
 	var mode os.FileMode
 
 	if _, err := os.Stat(absolutePath); err != nil {
@@ -96,10 +106,10 @@ func (d *Data) switchPaths(backupPath string, currentPath string) bool {
 	return true
 }
 
-func (d *Data) Backup() bool {
-	return d.switchPaths(d.originalPath(), d.isolatedPath())
+func (d Data) Backup(gameId string) bool {
+	return d.switchPaths(gameId, d.originalPath(gameId), d.isolatedPath(gameId))
 }
 
-func (d *Data) Restore() bool {
-	return d.switchPaths(d.isolatedPath(), d.originalPath())
+func (d Data) Restore(gameId string) bool {
+	return d.switchPaths(gameId, d.isolatedPath(gameId), d.originalPath(gameId))
 }

@@ -2,6 +2,7 @@ package advertisement
 
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/challenge/shared"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
@@ -22,7 +23,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	adv, ok := models.GetAdvertisement(int32(advId))
+	adv, ok := middleware.Age2Game(r).Advertisements().GetAdvertisement(int32(advId))
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -43,7 +44,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
 			peer := el.Value
 			var sess *models.Session
-			sess, ok = models.GetSessionByUser(peer.GetUser())
+			sess, ok = models.GetSessionByUserId(peer.GetUser().GetId())
 			if !ok {
 				continue
 			}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/spf13/viper"
 	"golang.org/x/net/ipv4"
 	"net"
 	"time"
@@ -58,7 +59,9 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 
 	var messageBuff bytes.Buffer
 	enc := gob.NewEncoder(&messageBuff)
-	err := enc.Encode(common.AnnounceMessageData000{})
+	err := enc.Encode(common.AnnounceMessageData001{
+		GameIds: viper.GetStringSlice("default.Games"),
+	})
 	if err != nil {
 		fmt.Println("Error encoding message data.")
 		return
@@ -66,7 +69,7 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	messageBuffBytes := messageBuff.Bytes()
 	var buf bytes.Buffer
 	buf.Write([]byte(common.AnnounceHeader))
-	buf.WriteByte(common.AnnounceVersion0)
+	buf.WriteByte(common.AnnounceVersion1)
 	var uuidBytes []byte
 	uuidBytes, err = uuid.New().MarshalBinary()
 	if err != nil {

@@ -19,6 +19,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	sess.GetUser().SetPresence(int8(presence))
+	u, _ := middleware.Age2Game(r).Users().GetUserById(sess.GetUserId())
+	u.SetPresence(int8(presence))
 	i.JSON(&w, i.A{0})
 }

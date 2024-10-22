@@ -37,8 +37,9 @@ func GetLanAdvertisements(w http.ResponseWriter, r *http.Request) {
 	for _, guid := range lanServerGuids {
 		lanServerGuidsMap[guid] = struct{}{}
 	}
-	currentUser := sess.GetUser()
-	advs := models.FindAdvertisementsEncoded(func(adv *models.Advertisement) bool {
+	game := middleware.Age2Game(r)
+	currentUser, _ := game.Users().GetUserById(sess.GetUserId())
+	advs := game.Advertisements().FindAdvertisementsEncoded(func(adv *models.MainAdvertisement) bool {
 		_, relayRegionMatches := lanServerGuidsMap[adv.GetRelayRegion()]
 		_, isPeer := adv.GetPeer(currentUser)
 		return adv.GetJoinable() &&

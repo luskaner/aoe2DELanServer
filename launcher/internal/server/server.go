@@ -192,6 +192,12 @@ func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*comm
 					if err = dec.Decode(&msg); err == nil {
 						data = msg
 					}
+				case common.AnnounceVersion1:
+					var msg common.AnnounceMessageData001
+					dec := gob.NewDecoder(messageBuffer)
+					if err = dec.Decode(&msg); err == nil {
+						data = msg
+					}
 				}
 				ip := serverAddr.IP.String()
 				var m *common.AnnounceMessage

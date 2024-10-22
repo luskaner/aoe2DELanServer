@@ -11,4 +11,5 @@ const (
 	ErrCreateLogFile
 	ErrStartServer
 	ErrMulticastGroup
+	ErrGames
 )

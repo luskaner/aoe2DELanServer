@@ -37,6 +37,7 @@ func main() {
 	if runtime.GOOS == "windows" {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
 	}
+	gameId := os.Args[7]
 	revertCmdLength, _ := strconv.ParseInt(os.Args[5], 10, 64)
 	revertCmdEnd := revertCmdStart + revertCmdLength
 	var revertCmd []string
@@ -67,7 +68,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	watch.Watch(steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
+	watch.Watch(gameId, steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

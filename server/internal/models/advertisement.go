@@ -26,7 +26,7 @@ type Password struct {
 	enabled bool
 }
 
-type Advertisement struct {
+type MainAdvertisement struct {
 	id                int32
 	ip                string
 	automatchPollId   int32
@@ -35,7 +35,7 @@ type Advertisement struct {
 	mapName           string
 	description       string
 	dataChecksum      uint32
-	host              *Peer
+	host              *MainUser
 	modDll            ModDll
 	modName           string
 	modVersion        string
@@ -55,138 +55,147 @@ type Advertisement struct {
 	platformSessionId uint64
 	state             int8
 	startTime         int64
-	chat              []Message
-	peers             *orderedmap.OrderedMap[*User, *Peer]
+	chat              []*MainMessage
+	peers             *orderedmap.OrderedMap[*MainUser, *MainPeer]
+	lock              *sync.RWMutex
+	chatLock          *sync.RWMutex
+	peerLock          *i.KeyRWMutex
 }
 
-var peers = make(map[*User]interface{})
-var hosts = make(map[*User]interface{})
-var advertisementStore = make(map[int32]*Advertisement)
-var chatLock = sync.RWMutex{}
-var advLock = i.NewKeyRWMutex()
-var peerLock = i.NewKeyRWMutex()
-var hostLock = i.NewKeyRWMutex()
+type MainAdvertisements struct {
+	peers *i.SafeSet[*MainUser]
+	hosts *i.SafeSet[*MainUser]
+	store *i.SafeMap[int32, *MainAdvertisement]
+	users *MainUsers
+}
 
-func (adv *Advertisement) GetModDllChecksum() uint32 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (advs *MainAdvertisements) Initialize(users *MainUsers) {
+	advs.peers = i.NewSafeSet[*MainUser]()
+	advs.hosts = i.NewSafeSet[*MainUser]()
+	advs.store = i.NewSafeMap[int32, *MainAdvertisement]()
+	advs.users = users
+}
+
+func (adv *MainAdvertisement) GetModDllChecksum() uint32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.modDll.checksum
 }
 
-func (adv *Advertisement) GetModDllFile() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetModDllFile() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.modDll.file
 }
 
-func (adv *Advertisement) GetPasswordValue() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetPasswordValue() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.password.value
 }
 
-func (adv *Advertisement) GetStartTime() int64 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetStartTime() int64 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.startTime
 }
 
-func (adv *Advertisement) GetState() int8 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetState() int8 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.state
 }
 
-func (adv *Advertisement) GetId() int32 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetId() int32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.id
 }
 
-func (adv *Advertisement) GetDescription() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetDescription() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.description
 }
 
-func (adv *Advertisement) GetRelayRegion() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetRelayRegion() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.relayRegion
 }
 
-func (adv *Advertisement) GetJoinable() bool {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetJoinable() bool {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.joinable
 }
 
-func (adv *Advertisement) GetVisible() bool {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetVisible() bool {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.visible
 }
 
-func (adv *Advertisement) GetHost() *Peer {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetHost() *MainUser {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.host
 }
 
-func (adv *Advertisement) GetAppBinaryChecksum() uint32 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetAppBinaryChecksum() uint32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.appBinaryChecksum
 }
 
-func (adv *Advertisement) GetDataChecksum() uint32 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetDataChecksum() uint32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.dataChecksum
 }
 
-func (adv *Advertisement) GetMatchType() uint8 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetMatchType() uint8 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.matchType
 }
 
-func (adv *Advertisement) GetModName() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetModName() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.modName
 }
 
-func (adv *Advertisement) GetModVersion() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetModVersion() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.modVersion
 }
 
-func (adv *Advertisement) GetIp() string {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetIp() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.ip
 }
 
-func (adv *Advertisement) GetVersionFlags() uint32 {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetVersionFlags() uint32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.versionFlags
 }
 
-func (adv *Advertisement) GetPeers() *orderedmap.OrderedMap[*User, *Peer] {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetPeers() *orderedmap.OrderedMap[*MainUser, *MainPeer] {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	return adv.peers
 }
 
-func (adv *Advertisement) GetPeer(user *User) (*Peer, bool) {
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+func (adv *MainAdvertisement) GetPeer(user *MainUser) (*MainPeer, bool) {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	userId := user.GetId()
-	peerLock.RLock(userId)
-	defer peerLock.RUnlock(userId)
+	adv.peerLock.RLock(userId)
+	defer adv.peerLock.RUnlock(userId)
 	u, exists := adv.peers.Get(user)
 	if !exists {
 		return nil, false
@@ -194,30 +203,34 @@ func (adv *Advertisement) GetPeer(user *User) (*Peer, bool) {
 	return u, true
 }
 
-func StoreAdvertisement(advFrom *shared.AdvertisementHostRequest) *Advertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) *MainAdvertisement {
 	if advFrom.Id != -1 {
 		return nil
 	}
 	var id int32
 	for {
+		i.RngLock.Lock()
 		id = i.Rng.Int31n(math.MaxInt32)
-		advLock.RLock(id)
-		_, exists := advertisementStore[id]
-		advLock.RUnlock(id)
+		i.RngLock.Unlock()
+		_, exists := advs.store.Load(id)
 		if !exists {
-			adv := &Advertisement{}
+			adv := &MainAdvertisement{
+				lock:     &sync.RWMutex{},
+				chatLock: &sync.RWMutex{},
+				peerLock: i.NewKeyRWMutex(),
+			}
 			adv.id = id
-			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(255)+1)
+			i.RngLock.Lock()
+			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(254)+1)
+			i.RngLock.Unlock()
 			adv.relayRegion = advFrom.RelayRegion
 			adv.party = advFrom.Party
 			adv.race = advFrom.Race
 			adv.team = advFrom.Team
 			adv.statGroup = advFrom.StatGroup
-			adv.peers = orderedmap.New[*User, *Peer]()
-			adv.chat = make([]Message, 0)
-			u, _ := GetUserById(advFrom.HostId)
-			adv.NewPeer(u, advFrom.Race, advFrom.Team)
-			adv.Update(&shared.AdvertisementUpdateRequest{
+			adv.peers = orderedmap.New[*MainUser, *MainPeer]()
+			adv.chat = make([]*MainMessage, 0)
+			advs.update(adv, &shared.AdvertisementUpdateRequest{
 				Id:                adv.id,
 				AppBinaryChecksum: advFrom.AppBinaryChecksum,
 				DataChecksum:      advFrom.DataChecksum,
@@ -244,16 +257,14 @@ func StoreAdvertisement(advFrom *shared.AdvertisementHostRequest) *Advertisement
 				PlatformSessionId: advFrom.PlatformSessionId,
 				State:             advFrom.State,
 			})
-			advLock.Lock(id)
-			advertisementStore[id] = adv
-			advLock.Unlock(id)
+			advs.store.Store(id, adv)
 			return adv
 		}
 	}
 }
 
-func (adv *Advertisement) AddMessage(broadcast bool, content string, typeId uint8, sender *User, receivers []*User) *Message {
-	message := &Message{
+func (adv *MainAdvertisement) AddMessage(broadcast bool, content string, typeId uint8, sender *MainUser, receivers []*MainUser) *MainMessage {
+	message := &MainMessage{
 		advertisementId: adv.GetId(),
 		time:            time.Now().UTC().Unix(),
 		broadcast:       broadcast,
@@ -262,25 +273,24 @@ func (adv *Advertisement) AddMessage(broadcast bool, content string, typeId uint
 		sender:          sender,
 		receivers:       receivers,
 	}
-	chatLock.Lock()
-	defer chatLock.Unlock()
-	adv.chat = append(adv.chat, *message)
+	adv.chatLock.Lock()
+	defer adv.chatLock.Unlock()
+	adv.chat = append(adv.chat, message)
 	return message
 }
 
-func (adv *Advertisement) Update(advFrom *shared.AdvertisementUpdateRequest) {
-	advLock.Lock(adv.id)
+func (advs *MainAdvertisements) Update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
+	advs.update(adv, advFrom)
+}
+
+func (advs *MainAdvertisements) update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
+	adv.lock.Lock()
 	if adv.host != nil {
-		previousHostId := adv.host.GetUser().GetId()
-		hostLock.Lock(previousHostId)
-		removeHost(adv.host)
-		hostLock.Unlock(previousHostId)
+		advs.removeHost(adv.host)
+		adv.host = nil
 	}
-	u, _ := GetUserById(advFrom.HostId)
-	adv.host, _ = adv.peers.Get(u)
-	hostLock.Lock(advFrom.HostId)
-	addHost(adv.host)
-	hostLock.Unlock(advFrom.HostId)
+	adv.host, _ = advs.users.GetUserById(advFrom.HostId)
+	advs.addHost(adv.host)
 	adv.automatchPollId = advFrom.AutomatchPollId
 	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
 	adv.mapName = advFrom.MapName
@@ -303,82 +313,66 @@ func (adv *Advertisement) Update(advFrom *shared.AdvertisementUpdateRequest) {
 	adv.options = advFrom.Options
 	adv.slotInfo = advFrom.SlotInfo
 	adv.platformSessionId = advFrom.PlatformSessionId
-	advLock.Unlock(adv.id)
+	adv.lock.Unlock()
 	adv.UpdateState(advFrom.State)
 }
 
-func GetAdvertisement(id int32) (*Advertisement, bool) {
-	advLock.RLock(id)
-	defer advLock.RUnlock(id)
-	adv, exists := advertisementStore[id]
-	return adv, exists
+func (advs *MainAdvertisements) GetAdvertisement(id int32) (*MainAdvertisement, bool) {
+	return advs.store.Load(id)
 }
 
-func (adv *Advertisement) NewPeer(u *User, race int32, team int32) *Peer {
-	if isPeer(u) {
+func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, race int32, team int32) *MainPeer {
+	if advs.isPeer(u) {
 		// Ignore already added peers (via host & join)
 		return nil
 	}
-	peer := &Peer{
+	peer := &MainPeer{
 		advertisement: adv,
 		user:          u,
 		race:          race,
 		team:          team,
-		invites:       make(map[*User]interface{}),
+		invites:       i.NewSafeSet[User](),
+		lock:          &sync.RWMutex{},
 	}
 	userId := peer.user.GetId()
-	peerLock.Lock(userId)
-	defer peerLock.Unlock(userId)
+	adv.peerLock.Lock(userId)
+	defer adv.peerLock.Unlock(userId)
 	adv.peers.Set(peer.user, peer)
-	addPeer(u)
+	advs.addPeer(u)
 	return peer
 }
 
-func (adv *Advertisement) RemovePeer(user *User) {
-	id := user.GetId()
-	peerLock.Lock(id)
+func (advs *MainAdvertisements) RemovePeer(adv *MainAdvertisement, user *MainUser) {
+	adv.peerLock.Lock(user.GetId())
 	adv.peers.Delete(user)
-	removePeer(user)
-	peerLock.Unlock(id)
-	advLock.Lock(adv.id)
-	if adv.peers.Len() == 0 || adv.host.GetUser() == user {
-		advLock.Unlock(adv.id)
-		adv.Delete()
-	} else {
-		advLock.Unlock(adv.id)
+	advs.removePeer(user)
+	adv.peerLock.Unlock(user.GetId())
+	if adv.peers.Len() == 0 || adv.host == user {
+		advs.Delete(adv)
 	}
 }
 
-func (adv *Advertisement) UpdatePeer(user *User, race int32, team int32) {
+func (adv *MainAdvertisement) UpdatePeer(user *MainUser, race int32, team int32) {
 	userId := user.GetId()
-	peerLock.Lock(userId)
-	defer peerLock.Unlock(userId)
+	adv.peerLock.Lock(userId)
+	defer adv.peerLock.Unlock(userId)
 	peer, _ := adv.peers.Get(user)
-	peer.race = race
-	peer.team = team
+	peer.Update(race, team)
 }
 
-func (adv *Advertisement) Delete() {
-	advLock.Lock(adv.id)
-	defer advLock.Unlock(adv.id)
-	delete(advertisementStore, adv.id)
-	host := adv.host
-	hostId := host.GetUser().GetId()
-	hostLock.Lock(hostId)
-	removeHost(adv.host)
-	hostLock.Unlock(hostId)
+func (advs *MainAdvertisements) Delete(adv *MainAdvertisement) {
+	adv.lock.Lock()
+	defer adv.lock.Unlock()
+	advs.store.Delete(adv.id)
+	advs.removeHost(adv.host)
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
-		u := el.Key
-		id := u.GetId()
-		peerLock.Lock(id)
-		removePeer(u)
-		peerLock.Unlock(id)
+		advs.removePeer(el.Key)
 	}
 }
 
-func (adv *Advertisement) UpdateState(state int8) {
-	advLock.Lock(adv.id)
-	defer advLock.Unlock(adv.id)
+func (adv *MainAdvertisement) UpdateState(state int8) {
+	adv.lock.Lock()
+	defer adv.lock.Unlock()
 	previousState := adv.state
 	adv.state = state
 	if adv.state == 1 && previousState != 1 {
@@ -388,24 +382,24 @@ func (adv *Advertisement) UpdateState(state int8) {
 	}
 }
 
-func (adv *Advertisement) EncodePeers() i.A {
+func (adv *MainAdvertisement) EncodePeers() i.A {
 	var peers = make(i.A, adv.peers.Len())
 	j := 0
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		p := el.Value
 		userId := el.Key.GetId()
-		peerLock.RLock(userId)
+		adv.peerLock.RLock(userId)
 		peers[j] = p.Encode()
-		peerLock.RUnlock(userId)
+		adv.peerLock.RUnlock(userId)
 		j++
 	}
 	return peers
 }
 
-func (adv *Advertisement) Encode() i.A {
+func (adv *MainAdvertisement) Encode() i.A {
 	var visible uint8
-	advLock.RLock(adv.id)
-	defer advLock.RUnlock(adv.id)
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
 	if adv.visible {
 		visible = 1
 	} else {
@@ -436,7 +430,7 @@ func (adv *Advertisement) Encode() i.A {
 		"",
 		"",
 		"0",
-		adv.host.GetUser().GetId(),
+		adv.host.GetId(),
 		started,
 		adv.description,
 		adv.description,
@@ -460,77 +454,69 @@ func (adv *Advertisement) Encode() i.A {
 	}
 }
 
-func FindAdvertisements(matches func(adv *Advertisement) bool) []*Advertisement {
-	var advs []*Advertisement
-	for _, adv := range advertisementStore {
-		advLock.RLock(adv.id)
-		if matches(adv) {
-			advs = append(advs, adv)
+func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdvertisement) bool) []*MainAdvertisement {
+	var res []*MainAdvertisement
+	for adv := range advs.store.Iter() {
+		adv.Value.lock.RLock()
+		if matches(adv.Value) {
+			res = append(res, adv.Value)
 		}
-		advLock.RUnlock(adv.id)
+		adv.Value.lock.RUnlock()
 	}
-	return advs
+	return res
 }
-func FindAdvertisementsEncoded(matches func(adv *Advertisement) bool) []i.A {
-	var advs []i.A
-	advsOriginal := FindAdvertisements(matches)
+
+func (advs *MainAdvertisements) FindAdvertisementsEncoded(matches func(adv *MainAdvertisement) bool) []i.A {
+	var res []i.A
+	advsOriginal := advs.FindAdvertisements(matches)
 	for _, adv := range advsOriginal {
-		advLock.RLock(adv.id)
-		advs = append(advs, adv.Encode())
-		advLock.RUnlock(adv.id)
+		adv.lock.RLock()
+		res = append(res, adv.Encode())
+		adv.lock.RUnlock()
 	}
-	return advs
+	return res
 }
 
-func IsInAdvertisement(user *User) bool {
-	return IsHost(user) || IsPeer(user)
+func (advs *MainAdvertisements) IsInAdvertisement(user *MainUser) bool {
+	return advs.IsHost(user) || advs.IsPeer(user)
 }
 
-func IsPeer(user *User) bool {
-	peerLock.RLock(user.GetId())
-	defer peerLock.RUnlock(user.GetId())
-	return isPeer(user)
+func (advs *MainAdvertisements) IsPeer(user *MainUser) bool {
+	return advs.isPeer(user)
 }
 
-func IsHost(user *User) bool {
-	id := user.GetId()
-	hostLock.RLock(id)
-	defer hostLock.RUnlock(id)
-	return isHost(user)
+func (advs *MainAdvertisements) IsHost(user *MainUser) bool {
+	return advs.isHost(user)
 }
 
-func isPeer(user *User) bool {
-	_, exists := peers[user]
-	return exists
+func (advs *MainAdvertisements) isPeer(user *MainUser) bool {
+	return advs.peers.Has(user)
 }
 
-func isHost(user *User) bool {
-	_, exists := hosts[user]
-	return exists
+func (advs *MainAdvertisements) isHost(user *MainUser) bool {
+	return advs.hosts.Has(user)
 }
 
-func addPeer(user *User) {
-	if !isPeer(user) {
-		peers[user] = struct{}{}
+func (advs *MainAdvertisements) addPeer(user *MainUser) {
+	if !advs.isPeer(user) {
+		advs.peers.Add(user)
 	}
 }
 
-func removePeer(user *User) {
-	if isPeer(user) {
-		delete(peers, user)
+func (advs *MainAdvertisements) removePeer(user *MainUser) {
+	if !advs.isPeer(user) {
+		advs.peers.Delete(user)
 	}
 }
 
-func addHost(peer *Peer) {
-	u := peer.GetUser()
-	if !isHost(u) {
-		hosts[u] = struct{}{}
+func (advs *MainAdvertisements) addHost(user *MainUser) {
+	if !advs.isHost(user) {
+		advs.hosts.Add(user)
 	}
 }
 
-func removeHost(peer *Peer) {
-	u := peer.GetUser()
-	if isHost(u) {
-		delete(hosts, u)
+func (advs *MainAdvertisements) removeHost(user *MainUser) {
+	if advs.isHost(user) {
+		advs.hosts.Delete(user)
 	}
 }

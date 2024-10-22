@@ -6,6 +6,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
@@ -30,7 +31,7 @@ func addUserCert(removedUserCert *x509.Certificate) bool {
 
 func backupMetadata() bool {
 	fmt.Println("Backing up previously restored metadata")
-	if userData.Metadata.Backup() {
+	if userData.Metadata(gameId).Backup(gameId) {
 		fmt.Println("Successfully backed up metadata")
 		return true
 	} else {
@@ -41,7 +42,7 @@ func backupMetadata() bool {
 
 func backupProfiles() bool {
 	fmt.Println("Backing up previously restored profiles")
-	if userData.BackupProfiles() {
+	if userData.BackupProfiles(gameId) {
 		fmt.Println("Successfully backed up profiles")
 		return true
 	} else {
@@ -92,6 +93,10 @@ var revertCmd = &cobra.Command{
 			RestoreProfiles = true
 			reverseFailed = false
 		}
+		if (restoredMetadata || restoredProfiles) && !common.ValidGame(gameId) {
+			fmt.Println("Invalid game type")
+			os.Exit(launcherCommon.ErrInvalidGame)
+		}
 		if RemoveUserCert {
 			fmt.Println("Removing user certificate, authorize it if needed...")
 			if removedUserCert, _ := wrapper.RemoveUserCert(); removedUserCert != nil {
@@ -105,7 +110,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreMetadata {
 			fmt.Println("Restoring metadata")
-			if userData.Metadata.Restore() {
+			if userData.Metadata(gameId).Restore(gameId) {
 				fmt.Println("Successfully restored metadata")
 				restoredMetadata = true
 			} else {
@@ -125,7 +130,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreProfiles {
 			fmt.Println("Restoring profiles")
-			if userData.RestoreProfiles(reverseFailed) {
+			if userData.RestoreProfiles(gameId, reverseFailed) {
 				fmt.Println("Successfully restored profiles")
 				restoredProfiles = true
 			} else {
@@ -232,12 +237,20 @@ var RemoveUserCert bool
 var RestoreMetadata bool
 var RestoreProfiles bool
 var stopAgent bool
+var gameId string
 
 func InitRevert() {
 	if runtime.GOOS != "linux" {
 		storeString = "user/" + storeString
 	}
 	cmd.InitRevert(revertCmd)
+	revertCmd.Flags().StringVarP(
+		&gameId,
+		"game",
+		"e",
+		common.GameAoE2,
+		fmt.Sprintf(`Game type. Only "%s" is currently supported.`, common.GameAoE2),
+	)
 	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(
 			&RemoveUserCert,

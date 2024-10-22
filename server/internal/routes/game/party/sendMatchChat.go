@@ -30,26 +30,28 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-
-	adv, ok := models.GetAdvertisement(req.MatchID)
+	game := middleware.Age2Game(r)
+	adv, ok := game.Advertisements().GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
 
 	sess, _ := middleware.Session(r)
-	currentUser := sess.GetUser()
+	currentUser, _ := game.Users().GetUserById(sess.GetUserId())
 
 	// Only peers within the match can send messages
 	// What about AI?
-	if _, ok := adv.GetPeer(currentUser); !ok {
+	if _, ok = adv.GetPeer(currentUser); !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
 
-	receivers := make([]*models.User, len(toProfileIds))
+	users := game.Users()
+
+	receivers := make([]*models.MainUser, len(toProfileIds))
 	for j, profileId := range toProfileIds {
-		receivers[j], _ = models.GetUserById(profileId)
+		receivers[j], _ = users.GetUserById(profileId)
 	}
 
 	message := adv.AddMessage(
@@ -63,7 +65,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	messageEncoded := message.Encode()
 	var receiverSession *models.Session
 	for _, receiver := range receivers {
-		receiverSession, ok = models.GetSessionByUser(receiver)
+		receiverSession, ok = models.GetSessionByUserId(receiver.GetId())
 		if !ok {
 			continue
 		}

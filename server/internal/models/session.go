@@ -9,12 +9,13 @@ import (
 type Session struct {
 	id              string
 	expiryTimer     *time.Timer
-	user            *User
+	userId          int32
 	expiryTimerLock sync.Mutex
+	gameId          string
 }
 
-var userIdSession sync.Map
-var sessionStore sync.Map
+var userIdSession = internal.NewSafeMap[int32, *Session]()
+var sessionStore = internal.NewSafeMap[string, *Session]()
 
 var (
 	sessionLetters  = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
@@ -22,10 +23,12 @@ var (
 )
 
 func generateSessionId() string {
+	sessionId := make([]rune, 30)
 	for {
-		sessionId := make([]rune, 30)
 		for i := range sessionId {
+			internal.RngLock.Lock()
 			sessionId[i] = sessionLetters[internal.Rng.Intn(len(sessionLetters))]
+			internal.RngLock.Unlock()
 		}
 		sessionIdStr := string(sessionId)
 		if _, exists := GetSessionById(sessionIdStr); !exists {
@@ -38,26 +41,31 @@ func (sess *Session) GetId() string {
 	return sess.id
 }
 
-func (sess *Session) GetUser() *User {
-	return sess.user
+func (sess *Session) GetUserId() int32 {
+	return sess.userId
 }
 
-func CreateSession(user *User) string {
+func (sess *Session) GetGameId() string {
+	return sess.gameId
+}
+
+func CreateSession(gameId string, userId int32) string {
 	session := &Session{
-		id:   generateSessionId(),
-		user: user,
+		id:     generateSessionId(),
+		userId: userId,
+		gameId: gameId,
 	}
 	session.expiryTimer = time.AfterFunc(sessionDuration, func() {
 		session.Delete()
 	})
 	sessionStore.Store(session.id, session)
-	userIdSession.Store(user.GetId(), session)
+	userIdSession.Store(userId, session)
 	return session.id
 }
 
 func (sess *Session) Delete() {
 	_ = sess.expiryTimer.Stop()
-	userIdSession.Delete(sess.user.GetId())
+	userIdSession.Delete(sess.userId)
 	sessionStore.Delete(sess.id)
 }
 
@@ -71,17 +79,9 @@ func (sess *Session) ResetExpiryTimer() {
 }
 
 func GetSessionById(sessionId string) (*Session, bool) {
-	value, exists := sessionStore.Load(sessionId)
-	if exists {
-		return value.(*Session), true
-	}
-	return nil, false
+	return sessionStore.Load(sessionId)
 }
 
-func GetSessionByUser(user *User) (*Session, bool) {
-	value, exists := userIdSession.Load(user.GetId())
-	if exists {
-		return value.(*Session), true
-	}
-	return nil, false
+func GetSessionByUserId(userId int32) (*Session, bool) {
+	return userIdSession.Load(userId)
 }
