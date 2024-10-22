@@ -2,8 +2,7 @@ package cloudfiles
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,19 +11,21 @@ import (
 
 func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 	key := strings.Join(strings.Split(r.URL.Path, "/")[2:], "/")
-	info, exists := models.GetCredentials(r.URL.Query().Get("sig"))
+	cloudfiles := middleware.Age2Game(r).Resources().CloudFiles
+	info, exists := cloudfiles.Credentials.GetCredentials(r.URL.Query().Get("sig"))
 
 	if !exists {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	filename, file, ok := files.CloudFiles.GetByKey(key)
+
+	filename, file, ok := cloudfiles.GetByKey(key)
 	if ok {
 		if file.Key != info.GetKey() {
 			http.Error(w, "Incorrect signature", http.StatusForbidden)
 			return
 		}
-		data, err := files.ReadCloudFile(filename)
+		data, err := cloudfiles.ReadFile(filename)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return

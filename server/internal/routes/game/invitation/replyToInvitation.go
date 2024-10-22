@@ -22,31 +22,31 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	adv, ok := models.GetAdvertisement(q.AdvertisementId)
+	game := middleware.Age2Game(r)
+	u, _ := game.Users().GetUserById(sess.GetUserId())
+	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var inviter *models.User
-	inviter, ok = models.GetUserById(q.InviterId)
+	var inviter *models.MainUser
+	inviter, ok = game.Users().GetUserById(q.InviterId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var peer *models.Peer
+	var peer *models.MainPeer
 	peer, ok = adv.GetPeer(inviter)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invited := peer.IsInvited(u)
-	if !invited {
+	if !peer.IsInvited(u) {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	peer.Uninvite(u)
-	inviterSession, ok := models.GetSessionByUser(inviter)
+	inviterSession, ok := models.GetSessionByUserId(inviter.GetId())
 	if ok {
 		var acceptStr string
 		if q.Accept {

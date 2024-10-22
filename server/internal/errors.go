@@ -10,4 +10,6 @@ const (
 	ErrCreateLogsDir
 	ErrCreateLogFile
 	ErrStartServer
+	ErrMulticastGroup
+	ErrGames
 )

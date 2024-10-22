@@ -3,6 +3,7 @@ package advertisement
 import (
 	"encoding/json"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 )
@@ -15,7 +16,7 @@ func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	advs := models.FindAdvertisementsEncoded(func(adv *models.Advertisement) bool {
+	advs := middleware.Age2Game(r).Advertisements().FindAdvertisementsEncoded(func(adv *models.MainAdvertisement) bool {
 		for _, advId := range advsIds {
 			if adv.GetId() == advId {
 				return true

@@ -13,7 +13,7 @@ func GetAchievements(w http.ResponseWriter, r *http.Request) {
 			0,
 			i.A{
 				i.A{
-					sess.GetUser().GetId(),
+					sess.GetUserId(),
 					// DO NOT RETURN ACHIEVEMENTS AS IT WILL *REALLY* GRANT THEM ON XBOX
 					i.A{},
 				},

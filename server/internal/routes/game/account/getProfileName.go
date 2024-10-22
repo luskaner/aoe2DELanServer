@@ -25,8 +25,9 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 		profileIdsMap[platformId] = struct{}{}
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	profileInfo := models.GetProfileInfo(false, func(currentUser *models.User) bool {
+	users := middleware.Age2Game(r).Users()
+	u, _ := users.GetUserById(sess.GetUserId())
+	profileInfo := users.GetProfileInfo(false, func(currentUser *models.MainUser) bool {
 		if u == currentUser {
 			return false
 		}

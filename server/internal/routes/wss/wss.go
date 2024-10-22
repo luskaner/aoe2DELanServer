@@ -7,7 +7,6 @@ import (
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -16,7 +15,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 var lock = i.NewKeyRWMutex()
-var connections sync.Map
+var connections = i.NewSafeMap[string, *websocket.Conn]()
 var writeWait = 1 * time.Second
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
@@ -141,7 +140,7 @@ func SendMessage(sessionId string, message i.A) bool {
 		return false
 	}
 
-	err := conn.(*websocket.Conn).WriteJSON(message)
+	err := conn.WriteJSON(message)
 	lock.RUnlock(sessionId)
 	if err != nil {
 		return false

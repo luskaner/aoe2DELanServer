@@ -11,8 +11,23 @@ import (
 	"time"
 )
 
-const steamProcess = "AoE2DE_s.exe"
-const microsoftStoreProcess = "AoE2DE.exe"
+func steamProcess(gameId string) string {
+	switch gameId {
+	case common.GameAoE2:
+		return "AoE2DE_s.exe"
+	default:
+		return ""
+	}
+}
+
+func microsoftStoreProcess(gameId string) string {
+	switch gameId {
+	case common.GameAoE2:
+		return "AoE2DE.exe"
+	default:
+		return ""
+	}
+}
 
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
@@ -79,13 +94,13 @@ func Kill(exe string) (proc *os.Process, err error) {
 	}
 }
 
-func GameProcesses(steam bool, microsoftStore bool) []string {
+func GameProcesses(gameId string, steam bool, microsoftStore bool) []string {
 	processes := mapset.NewSet[string]()
 	if steam {
-		processes.Add(steamProcess)
+		processes.Add(steamProcess(gameId))
 	}
 	if microsoftStore {
-		processes.Add(microsoftStoreProcess)
+		processes.Add(microsoftStoreProcess(gameId))
 	}
 	return processes.ToSlice()
 }

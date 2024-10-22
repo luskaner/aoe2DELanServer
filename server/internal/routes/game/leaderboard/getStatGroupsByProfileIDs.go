@@ -7,6 +7,6 @@ import (
 )
 
 func GetStatGroupsByProfileIDs(w http.ResponseWriter, r *http.Request) {
-	response := shared.GetStatGroups(r.URL.Query().Get("profileids"), true, true)
+	response := shared.GetStatGroups(r, r.URL.Query().Get("profileids"), true, true)
 	i.JSON(&w, response)
 }

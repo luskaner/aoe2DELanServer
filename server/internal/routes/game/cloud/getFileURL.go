@@ -2,9 +2,10 @@ package cloud
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"net/http"
 )
 
@@ -16,15 +17,16 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
+	game := middleware.Age2Game(r)
 	descriptions := make(i.A, len(names))
 	for j, name := range names {
-		fileData := files.CloudFiles[name]
+		fileData := game.Resources().CloudFiles.Value[name]
 		finalPart := fileData.Key
 		descriptions[j] = i.A{
 			name,
 			fileData.Length,
 			fileData.Id,
-			"https://" + common.Domain + "/cloudfiles/" + finalPart,
+			fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
 			finalPart,
 		}
 	}

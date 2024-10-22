@@ -3,10 +3,12 @@ package shared
 import (
 	"encoding/json"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"net/http"
 )
 
-func GetStatGroups(idsQuery string, isProfileId bool, includeExtraProfileInfo bool) i.A {
+func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeExtraProfileInfo bool) i.A {
 	var ids []int32
 	err := json.Unmarshal([]byte(idsQuery), &ids)
 	if err != nil {
@@ -14,14 +16,14 @@ func GetStatGroups(idsQuery string, isProfileId bool, includeExtraProfileInfo bo
 	}
 
 	message := i.A{0, i.A{}, i.A{}, i.A{}}
-
+	users := middleware.Age2Game(r).Users()
 	for _, id := range ids {
-		var u *models.User
+		var u models.User
 		var ok bool
 		if isProfileId {
-			u, ok = models.GetUserById(id)
+			u, ok = users.GetUserById(id)
 		} else {
-			u, ok = models.GetUserByStatId(id)
+			u, ok = users.GetUserByStatId(id)
 		}
 		if !ok {
 			continue

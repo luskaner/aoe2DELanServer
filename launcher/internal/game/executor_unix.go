@@ -7,7 +7,7 @@ import (
 )
 
 // MicrosoftStoreExecutor is not supported on non-Windows platforms
-func isInstalledOnMicrosoftStore() bool {
+func isInstalledOnMicrosoftStore(_ int) bool {
 	return false
 }
 func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.Result) {

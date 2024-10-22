@@ -109,7 +109,7 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 		} else {
 			fmt.Println("Adding host to hosts file, authorize \"config-admin-agent\" if needed...")
 		}
-		if result := executor.RunSetUp(ips, nil, nil, false, false, mapCDN, true); !result.Success() {
+		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true); !result.Success() {
 			fmt.Println("Failed to add host.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
