@@ -25,7 +25,7 @@ func TestRunRevertCommandKeepsStoreOnFailure(t *testing.T) {
 	storeCommand(t, []string{"fake-exe", "--do-stuff"})
 
 	var received exec.Options
-	r := NewReverter(deps{exec: func(options exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(options exec.Options) *exec.Result {
 		received = options
 		return &exec.Result{Err: os.ErrPermission, ExitCode: 1}
 	}})
@@ -50,7 +50,7 @@ func TestRunRevertCommandKeepsStoreOnFailure(t *testing.T) {
 func TestRunRevertCommandClearsStoreOnSuccess(t *testing.T) {
 	storeCommand(t, []string{"fake-exe", "--ok"})
 
-	r := NewReverter(deps{exec: func(exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(exec.Options) *exec.Result {
 		return &exec.Result{}
 	}})
 
@@ -72,7 +72,7 @@ func TestRunRevertCommandNoopWithoutStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	execRan := false
-	r := NewReverter(deps{exec: func(exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(exec.Options) *exec.Result {
 		execRan = true
 		return &exec.Result{}
 	}})
@@ -88,7 +88,7 @@ func TestRunRevertCommandNoopWithoutStore(t *testing.T) {
 func TestRunRevertCommandOptionsFnMutates(t *testing.T) {
 	storeCommand(t, []string{"fake-exe"})
 	var seenInjected bool
-	r := NewReverter(deps{exec: func(opts exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(opts exec.Options) *exec.Result {
 		if len(opts.Args) == 1 && opts.Args[0] == "injected" {
 			seenInjected = true
 		}
@@ -109,7 +109,7 @@ func TestRunRevertCommandOptionsFnMutates(t *testing.T) {
 func TestRunRevertCommandOutputRedirection(t *testing.T) {
 	storeCommand(t, []string{"fake-exe"})
 	var captured *exec.Options
-	r := NewReverter(deps{exec: func(opts exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(opts exec.Options) *exec.Result {
 		captured = &opts
 		return &exec.Result{}
 	}})
@@ -126,7 +126,7 @@ func TestRunRevertCommandOutputRedirection(t *testing.T) {
 func TestRunRevertCommandSingleArgNoArgs(t *testing.T) {
 	storeCommand(t, []string{"only-exe"})
 	var received exec.Options
-	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(o exec.Options) *exec.Result {
 		received = o
 		return &exec.Result{}
 	}})

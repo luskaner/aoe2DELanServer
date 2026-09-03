@@ -21,7 +21,7 @@ import (
 )
 
 // deps groups the external effect points used by the admin client so tests can
-// inject fakes via NewAdmin instead of mutating package globals.
+// inject fakes via newAdmin instead of mutating package globals.
 type deps struct {
 	bytesToCertificate func([]byte) *x509.Certificate
 	newFile            func(root string, gameId string, finalRoot bool) (error, *commonLogger.Root)
@@ -71,18 +71,15 @@ type Admin struct {
 	dec  *gob.Decoder
 }
 
-// NewAdmin returns an Admin using the given deps. Prefer DefaultDeps() plus
-// field overrides in tests.
-func NewAdmin(d deps) *Admin {
+// newAdmin returns an Admin using the supplied deps. Tests build their own from
+// defaultDeps() plus field overrides; the production path uses Default.
+func newAdmin(d deps) *Admin {
 	return &Admin{deps: d}
 }
 
-// DefaultDeps returns the production dependencies for an Admin.
-func DefaultDeps() deps { return defaultDeps() }
-
 // Default is the process-wide Admin used by the package-level convenience
 // functions, mirroring the http.DefaultClient idiom.
-var Default = NewAdmin(defaultDeps())
+var Default = newAdmin(defaultDeps())
 
 func (a *Admin) RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
 	exitCode = common.ErrGeneral

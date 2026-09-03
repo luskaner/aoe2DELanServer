@@ -22,9 +22,9 @@ func newTestAdmin(t *testing.T) *Admin {
 	oldLogger := internal.Logger
 	t.Cleanup(func() { internal.Logger = oldLogger })
 	internal.Logger = nil
-	d := DefaultDeps()
+	d := defaultDeps()
 	d.sleep = func(time.Duration) {}
-	return NewAdmin(d)
+	return newAdmin(d)
 }
 
 func TestRunSetUpCertParseFailure(t *testing.T) {

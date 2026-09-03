@@ -20,7 +20,7 @@ import (
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
 // deps groups the process-effect points used by the revert operations so tests
-// can inject fakes via NewReverter instead of mutating package globals (which
+// can inject fakes via newReverter instead of mutating package globals (which
 // would break t.Parallel and risk data races).
 type deps struct {
 	isAdmin      func() bool
@@ -37,22 +37,30 @@ func defaultDeps() deps {
 }
 
 // Reverter is the injectable entry point for the revert operations. Tests build
-// their own via NewReverter; the package-level functions delegate to Default.
+// their own via newReverter; the package-level functions delegate to Default.
 type Reverter struct {
 	deps deps
 }
 
-// NewReverter returns a Reverter using the supplied deps. Use the zero value to
-// fall back to the production defaults (see DefaultDeps).
-func NewReverter(d deps) *Reverter {
+// newReverter returns a Reverter using the supplied deps. Any nil function is
+// filled in with the production default, so callers may pass a zero deps or
+// override only the fields they need.
+func newReverter(d deps) *Reverter {
+	def := defaultDeps()
+	if d.isAdmin == nil {
+		d.isAdmin = def.isAdmin
+	}
+	if d.agentRunning == nil {
+		d.agentRunning = def.agentRunning
+	}
+	if d.exec == nil {
+		d.exec = def.exec
+	}
 	return &Reverter{deps: d}
 }
 
-// DefaultDeps returns the production dependencies for a Reverter.
-func DefaultDeps() deps { return defaultDeps() }
-
 // Default is the process-wide Reverter used by the package-level wrappers.
-var Default = NewReverter(defaultDeps())
+var Default = newReverter(deps{})
 
 type ConfigRevertFlagOptions struct {
 	*config.RevertValues

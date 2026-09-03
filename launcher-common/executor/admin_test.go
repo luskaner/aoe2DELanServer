@@ -25,6 +25,7 @@ func (f fakeRunner) Exec(o exec.Options) *exec.Result {
 }
 
 func TestRunSetUp_ForwardsFlags(t *testing.T) {
+	t.Parallel()
 	var captured exec.Options
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
 		captured = o
@@ -55,6 +56,7 @@ func TestRunSetUp_ForwardsFlags(t *testing.T) {
 }
 
 func TestRunSetUp_NilCert(t *testing.T) {
+	t.Parallel()
 	ex := NewExecutor(fakeRunner{})
 	ip := net.ParseIP("10.0.0.1")
 	res := ex.RunSetUp("age2", ip, false, nil, "", nil, nil)
@@ -64,6 +66,7 @@ func TestRunSetUp_NilCert(t *testing.T) {
 }
 
 func TestRunRevert_FailFastTrue(t *testing.T) {
+	t.Parallel()
 	var captured exec.Options
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
 		captured = o
@@ -85,6 +88,7 @@ func TestRunRevert_FailFastTrue(t *testing.T) {
 }
 
 func TestRunRevert_FailFastFalseSetsRemoveAll(t *testing.T) {
+	t.Parallel()
 	var captured exec.Options
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
 		captured = o
@@ -103,6 +107,7 @@ func TestRunRevert_FailFastFalseSetsRemoveAll(t *testing.T) {
 }
 
 func TestRun_FlushCacheAgentAndFlushCache(t *testing.T) {
+	t.Parallel()
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result { return &exec.Result{Pid: 123} }})
 
 	file, result := ex.RunFlushCacheAgent(true, false, "/logs", nil, nil)
@@ -122,6 +127,7 @@ func TestRun_FlushCacheAgentAndFlushCache(t *testing.T) {
 }
 
 func TestRun_OptionsFnMutation(t *testing.T) {
+	t.Parallel()
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
 		if o.File != "mutated" {
 			t.Errorf("optionsFn not applied, File=%q", o.File)
@@ -132,6 +138,7 @@ func TestRun_OptionsFnMutation(t *testing.T) {
 }
 
 func TestRun_OutRedirectionNonWindows(t *testing.T) {
+	t.Parallel()
 	var captured exec.Options
 	ex := NewExecutor(fakeRunner{isAdmin: true, exec: func(o exec.Options) *exec.Result {
 		captured = o
@@ -150,6 +157,7 @@ type testWriter struct{}
 func (t *testWriter) Write(p []byte) (n int, err error) { return len(p), nil }
 
 func TestRunFlushCache_OptionsFn(t *testing.T) {
+	t.Parallel()
 	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
 		if o.File != "custom" {
 			t.Errorf("optionsFn File not mutated")
@@ -160,6 +168,7 @@ func TestRunFlushCache_OptionsFn(t *testing.T) {
 }
 
 func TestDefaultExecutorIsNotNil(t *testing.T) {
+	t.Parallel()
 	if Default == nil {
 		t.Fatal("Default executor should never be nil")
 	}

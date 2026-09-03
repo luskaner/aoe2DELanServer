@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 )
 
@@ -25,7 +26,7 @@ func TestConfigRevert_NoStoreIsSuccess(t *testing.T) {
 		called = true
 		return &exec.Result{}
 	}
-	r := NewReverter(deps{})
+	r := newReverter(deps{})
 	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if !ok {
 		t.Error("ConfigRevert with empty store should return success true")
@@ -51,7 +52,7 @@ func TestConfigRevert_SuccessDeletesStore(t *testing.T) {
 		}
 		return &exec.Result{}
 	}
-	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
 	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if !ok {
 		t.Error("expected success true when mock succeeds")
@@ -78,7 +79,7 @@ func TestConfigRevert_FailureKeepsStore(t *testing.T) {
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
 		return &exec.Result{Err: os.ErrPermission, ExitCode: 1}
 	}
-	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
 	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if ok {
 		t.Error("expected success false when revert fails")
@@ -103,13 +104,14 @@ func TestConfigRevert_ParseErrorFallbackAllGames(t *testing.T) {
 		calls = append(calls, f)
 		return &exec.Result{}
 	}
-	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
 	ok := r.ConfigRevert("", "/tmp/logs", false, nil, nil, mock)
 	if !ok {
 		t.Error("expected success")
 	}
-	if len(calls) != 5 {
-		t.Fatalf("expected 5 calls for all games fallback, got %d: %v", len(calls), calls)
+	wantCalls := len(game.SupportedGames.ToSlice())
+	if len(calls) != wantCalls {
+		t.Fatalf("expected %d calls for all games fallback, got %d: %v", wantCalls, len(calls), calls)
 	}
 	for _, f := range calls {
 		found := false
@@ -138,7 +140,7 @@ func TestConfigRevert_HeadlessRequiresAdminSkips(t *testing.T) {
 		called = true
 		return &exec.Result{}
 	}
-	r := NewReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
 	ok := r.ConfigRevert("age2", "", true, nil, nil, mock)
 	if ok {
 		t.Error("headless with admin required should return false (skipped)")
@@ -177,7 +179,7 @@ func TestConfigRevert_OptionsFnForwarded(t *testing.T) {
 		return &exec.Result{}
 	}
 	optionsFn := func(o *exec.Options) { o.File = "mutated" }
-	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
 	ok := r.ConfigRevert("age2", "", false, nil, optionsFn, mock)
 	if !ok {
 		t.Error("expected success")
@@ -188,13 +190,14 @@ func TestConfigRevert_OptionsFnForwarded(t *testing.T) {
 }
 
 func TestRevertRequiresAdminElevation_ParseError(t *testing.T) {
-	r := NewReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
+	r := newReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
 	if !r.RevertRequiresAdminElevation([]string{"--invalid-flag-xyz"}, false) {
 		t.Error("expected true on parse error")
 	}
 }
 
 func TestRequiresAdminElevation_Combos(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		isAdmin bool
 		agent   bool
@@ -206,7 +209,7 @@ func TestRequiresAdminElevation_Combos(t *testing.T) {
 		{true, true, false},
 	}
 	for _, tc := range tests {
-		r := NewReverter(deps{isAdmin: func() bool { return tc.isAdmin }, agentRunning: func(bin bool) bool { return tc.agent }})
+		r := newReverter(deps{isAdmin: func() bool { return tc.isAdmin }, agentRunning: func(bin bool) bool { return tc.agent }})
 		got := r.RequiresAdminElevation(false)
 		if got != tc.want {
 			t.Errorf("isAdmin=%v agent=%v got %v want %v", tc.isAdmin, tc.agent, got, tc.want)
@@ -216,7 +219,7 @@ func TestRequiresAdminElevation_Combos(t *testing.T) {
 
 func TestRunRevert_BuildsCorrectArgs(t *testing.T) {
 	var captured exec.Options
-	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(o exec.Options) *exec.Result {
 		captured = o
 		return &exec.Result{}
 	}})
@@ -244,7 +247,7 @@ func TestRunRevert_BuildsCorrectArgs(t *testing.T) {
 }
 
 func TestRunRevert_OptionsFnMutates(t *testing.T) {
-	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
+	r := newReverter(deps{exec: func(o exec.Options) *exec.Result {
 		if o.File != "mutated" {
 			t.Errorf("optionsFn mutation not applied, File=%q", o.File)
 		}
@@ -255,13 +258,8 @@ func TestRunRevert_OptionsFnMutates(t *testing.T) {
 	})
 }
 
-func TestConfigAdminAgentRunning_NoProcess(t *testing.T) {
-	if ConfigAdminAgentRunning(false) {
-		t.Log("agent running, but expected not running in test env")
-	}
-}
-
 func TestRevertRequiresAdminElevation_Values(t *testing.T) {
+	t.Parallel()
 	v := &config.RevertValues{
 		RevertBaseValues: &config.RevertBaseValues{RevertMinimalValues: &config.RevertMinimalValues{IPs: false, Certs: false}},
 		CommonBaseValues: &config.CommonBaseValues{},
