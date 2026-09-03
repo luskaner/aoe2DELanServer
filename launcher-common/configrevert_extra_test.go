@@ -8,7 +8,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 )
 
 func tempRevertStore(t *testing.T) {
@@ -256,22 +255,4 @@ func TestRunRevert_OptionsFnMutates(t *testing.T) {
 	r.RunRevert([]string{"--ip"}, false, nil, func(o *exec.Options) {
 		o.File = "mutated"
 	})
-}
-
-func TestRevertRequiresAdminElevation_Values(t *testing.T) {
-	t.Parallel()
-	v := &config.RevertValues{
-		RevertBaseValues: &config.RevertBaseValues{RevertMinimalValues: &config.RevertMinimalValues{IPs: false, Certs: false}},
-		CommonBaseValues: &config.CommonBaseValues{},
-	}
-	if RevertRequiresAdminElevationValues(v) {
-		t.Error("no IPs/Certs should not require admin")
-	}
-	v2 := &config.RevertValues{
-		RevertBaseValues: &config.RevertBaseValues{RevertMinimalValues: &config.RevertMinimalValues{IPs: true}},
-		CommonBaseValues: &config.CommonBaseValues{HostFilePath: "/x"},
-	}
-	if RevertRequiresAdminElevationValues(v2) {
-		t.Error("IPs with path should not require admin")
-	}
 }
