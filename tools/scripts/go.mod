@@ -12,8 +12,9 @@ require (
 require (
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
+	github.com/rogpeppe/go-internal v1.15.0 // indirect
 	go.digitalxero.dev/go-msix v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.17.9 // indirect
+	go.mongodb.org/mongo-driver v1.17.10 // indirect
 	go.mozilla.org/pkcs7 v0.10.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
 )
@@ -69,10 +70,10 @@ require (
 	github.com/xo/terminfo v1.0.0 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
-	golang.org/x/exp v0.0.0-20260813180055-c1d0aacb2297 // indirect; i
-	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba // indirect; i
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

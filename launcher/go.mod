@@ -9,8 +9,8 @@ require (
 	github.com/knadh/koanf/v2 v2.3.6
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/net v0.58.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/net v0.59.0
+	golang.org/x/sys v0.48.0
 )
 
 require (
@@ -23,5 +23,5 @@ require (
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
-	go.mongodb.org/mongo-driver v1.17.9 // indirect
+	go.mongodb.org/mongo-driver v1.17.10 // indirect
 )
